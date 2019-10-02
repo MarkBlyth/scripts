@@ -9,8 +9,8 @@ Useful for finding lines in a LaTeX document with extra $, { etc. inserted, when
 the compiler output isn't being useful
 """
 
-seach_pairs = [('{', '}'), ('"', '"'), 
-               ('$', '$'), ('(', ')')]
+seach_pairs = [('{', '}'), ('"', ''), 
+               ('$', ''), ('(', ')')]
 # TODO add some method for adding / removing more seach pairs
 
 if __name__ == "__main__":
@@ -23,7 +23,10 @@ if __name__ == "__main__":
     with (open(args.infile, 'r') if args.infile else sys.stdin) as infile:
         for line_num, line in enumerate(infile):
             for incrementer,decrementer in seach_pairs:
-                count = line.count(incrementer) - line.count(decrementer)
+                if decrementer == '':
+                    count = line.count(incrementer) % 2
+                else:
+                    count = line.count(incrementer) - line.count(decrementer)
                 if count is not 0:
                     outstring = "Line {0}: {1} {2} unmatched (diff {3})\n{4}"
                     print(outstring.format(line_num, incrementer, decrementer, 
