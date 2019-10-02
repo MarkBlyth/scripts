@@ -29,5 +29,5 @@ if __name__ == "__main__":
                     count = line.count(incrementer) - line.count(decrementer)
                 if count is not 0:
                     outstring = "Line {0}: {1} {2} unmatched (diff {3})\n{4}"
-                    print(outstring.format(line_num, incrementer, decrementer, 
+                    print(outstring.format(line_num+1, incrementer, decrementer, 
                         count, line))
