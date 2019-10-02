@@ -1,0 +1,113 @@
+#!/usr/bin/env python3
+
+import subprocess
+import argparse
+import sys
+import os
+
+# List of tuples of form 
+#   ("laptop directory to back up", [HDD LOCATION]"/HDD backup file")
+targets_list = [("~/Files/", "/Files/"),
+                ("~/Pictures/", "/Pictures/")]
+
+def query_yes_no(question, default="yes"):
+    """
+    Ask a yes/no question via raw_input() and return their answer.
+
+    "question" is a string that is presented to the user.
+    "default" is the presumed answer if the user just hits <Enter>.
+        It must be "yes" (the default), "no" or None (meaning
+        an answer is required of the user).
+
+    The "answer" return value is True for "yes" or False for "no".
+    """
+    valid = {"yes": True, "y": True, "ye": True,
+             "no": False, "n": False}
+    if default is None:
+        prompt = " [y/n] "
+    elif default == "yes":
+        prompt = " [Y/n] "
+    elif default == "no":
+        prompt = " [y/N] "
+    else:
+        raise ValueError("invalid default answer: '%s'" % default)
+
+    while True:
+        sys.stdout.write(question + prompt)
+        choice = input().lower()
+        if default is not None and choice == '':
+            return valid[default]
+        elif choice in valid:
+            return valid[choice]
+        else:
+            sys.stdout.write("Please respond with 'yes' or 'no' "
+                             "(or 'y' or 'n').\n")
+
+def parse_config(filename):
+    with open(filename) as f:
+        lines = f.readlines()
+    ret = {}
+    for line in lines:
+        i,j = line.split()
+        ret[i.lower()]=j
+    return ret
+
+def get_mount_point():
+    """
+    Find the mount point of the portable hard drive.
+    Return it.
+    """
+    response = subprocess.run('mount', stdout=subprocess.PIPE)
+    lines = response.stdout.decode('utf-8').split('\n')
+    mounts = [line for line in lines if 'BACKUP' in line]
+    return None if len(mounts)==0 else mounts[0].split(' ')[2]
+
+def run_rsync(source,target, proc_args="-avh"):
+    """
+    Run rsync, from source to target, using the given process args.
+    Return the return code.
+    """
+    proc_command = "rsync {0} {1} {2}".format(proc_args, source, target)
+    print(proc_command)
+    proc = subprocess.Popen(proc_command, stdout=subprocess.PIPE, shell=True)
+    while proc.poll() is None:
+        line = proc.stdout.readline() 
+        print(line.decode('utf-8'), end='')
+    print(proc.stdout.read())
+    return proc.poll()
+
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Run rsync backup job, TODO")
+    parser.add_argument("-r", "--remote", help="Backup to the system defined in ~/.backup.conf", default=False, action="store_true")
+    parser.add_argument("-f", "--force", help="Force rsync to run; don't query before doing so", default=False, action="store_true")
+    parser.add_argument("-n", "--dryrun", help="Dry run, don't actually send any files", default=False, action="store_true")
+    parser.add_argument("-d", "--delete", help="When backing up, delete any files from the backup that have been deleted on the source", 
+            default=False, action="store_true")
+    args = parser.parse_args()
+
+    proc_args = "-avhn" if args.dryrun else "-avh"
+    proc_args += " --delete" if args.delete else ""
+
+    if args.remote:
+        # Run remote backup
+        config_path = os.path.expanduser('~/.backup.conf')
+        config_file = parse_config(config_path)
+
+        mount_directory = config_file["mountpoint"]
+        mount_directory = mount_directory[:-1] if mount_directory[-1]=='/' else mount_directory
+        proc_args += " -e \"ssh -p {0} -i ~/.ssh/id_ed25519\"".format(config_file["port"])
+        mount_point = config_file["user"] + '@' + config_file["ip"] + ':' + mount_directory
+    else:
+        # Run local backup
+        mount_point = get_mount_point()
+        if mount_point is None:
+            sys.exit("No portable hard drive found. Exiting.")
+    
+    for source,dest in targets_list:
+        # run it!
+        proc_command = "rsync {0} {1} {2}".format(proc_args, source, mount_point+dest)
+        # TODO: if running remotely, append "/[port]" to the end or something
+        if args.force or query_yes_no("About to run {0}; continue?".format(proc_command)):
+            run_rsync(source, mount_point+dest, proc_args)
