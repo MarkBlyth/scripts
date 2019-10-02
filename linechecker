@@ -1,0 +1,30 @@
+#!/usr/bin/env python3
+
+import argparse
+import sys
+
+"""
+Check a plaintext document for lines containing uneven numbers of search characters.
+Useful for finding lines in a LaTeX document with extra $, { etc. inserted, when
+the compiler output isn't being useful
+"""
+
+seach_pairs = [('{', '}'), ('"', '"'), 
+               ('$', '$'), ('(', ')')]
+# TODO add some method for adding / removing more seach pairs
+
+if __name__ == "__main__":
+    # parse arguments
+    parser = argparse.ArgumentParser(description="Find lines of the input document containing uneven pairs of seach characters.")
+    parser.add_argument("-i", "--infile", type=str, default=None,
+            help="Input file to seach, default stdin")
+    args = parser.parse_args()
+
+    with (open(args.infile, 'r') if args.infile else sys.stdin) as infile:
+        for line_num, line in enumerate(infile):
+            for incrementer,decrementer in seach_pairs:
+                count = line.count(incrementer) - line.count(decrementer)
+                if count is not 0:
+                    outstring = "Line {0}: {1} {2} unmatched (diff {3})\n{4}"
+                    print(outstring.format(line_num, incrementer, decrementer, 
+                        count, line))
