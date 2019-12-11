@@ -1,0 +1,21 @@
+#!/bin/bash
+
+mkdir BEAMERBUILD
+cp ~/presentations/UoB-beamer-theme/* BEAMERBUILD/
+#cp "$@" BEAMERBUILD/
+cp ./* BEAMERBUILD/
+cd BEAMERBUILD
+
+filename=$(basename -- "$1")
+filename="${filename%.*}"
+
+pdflatex $1
+pdflatex $1
+
+mv $filename.pdf ..
+
+cd ..
+rm -rf BEAMERBUILD
+
+
+#rm *aux *log *nav *out *snm *toc
