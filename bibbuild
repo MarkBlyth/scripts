@@ -1,0 +1,3 @@
+cat *org | getbibs -o refs.bib
+cat *org > ALLORGS.org
+refs2pdf -i ALLORGS.org -o all_refs.pdf
