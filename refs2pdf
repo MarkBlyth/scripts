@@ -1,0 +1,36 @@
+#!/bin/bash
+
+echo "Warning: this script isn't well written. It won't work if it isn't used exactly right"
+echo "Usage: bibs2pdf -i INFILE -o OUTFILE"
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+    key="$1"
+
+    case $key in
+        -i|--input)
+        INPUT="$2"
+        shift # past argument
+        shift # past value
+        ;;
+        -o|--output)
+        OUTPUT="$2"
+        shift # past argument
+        shift # past value
+        ;;
+        --default)
+        echo "Only -i infile -o outfile args are allowed!"
+        exit
+        ;;
+    esac
+done
+
+echo "Cleaning"
+getbibs -ri ${INPUT} > NOBIBS.temp
+sed -i '/^\*\*\* Reference*/d' NOBIBS.temp
+sed -i '/^\*\*\* BibTeX*/d' NOBIBS.temp
+echo "Pandocing"
+mv NOBIBS.temp ___NOBIBS.org
+pandoc ___NOBIBS.org -o ${OUTPUT}
+rm ___NOBIBS.org
