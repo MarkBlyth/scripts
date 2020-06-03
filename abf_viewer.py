@@ -11,10 +11,10 @@ def main():
         description="Visualise some neuron data from an abf file")
     parser.add_argument("filename", help="ABF file to open")
     parser.add_argument(
-        "-s", "--sweep", help="Data sweep to visualise", default=0, type=int
+        "-s", "--sweep", help="Data sweep to visualise", default=None, type=int
     )
     parser.add_argument(
-        "-c", "--channel", help="Channel to extract", default=0, type=int
+        "-c", "--channel", help="Channel to extract", default=None, type=int
     )
     parser.add_argument("-e", "--export", action="store_true")
     parser.add_argument(
@@ -24,7 +24,9 @@ def main():
     args = parser.parse_args()
 
     abf = pyabf.ABF(args.filename)
-    abf.setSweep(args.sweep, args.channel)
+    channel = 0 if args.channel is None else args.channel
+    sweep = 0 if args.sweep is None else args.sweep
+    abf.setSweep(sweep, channel)
 
     ts = abf.sweepX
     ys = abf.sweepY[np.logical_and(args.lower <= ts, ts <= args.upper)]
@@ -40,7 +42,7 @@ def main():
             np.save(outfile, data_arr)
         return
 
-    if args.sweep is None:
+    if args.sweep is None and args.channel is None:
         print(abf)
     else:
         _, ax = plt.subplots()
