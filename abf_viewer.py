@@ -11,7 +11,7 @@ def main():
         description="Visualise some neuron data from an abf file")
     parser.add_argument("filename", help="ABF file to open")
     parser.add_argument(
-        "-s", "--sweep", help="Data sweep to visualise", default=None, type=int
+        "-s", "--sweep", help="Data sweep to visualise", default=0, type=int
     )
     parser.add_argument(
         "-c", "--channel", help="Channel to extract", default=0, type=int
